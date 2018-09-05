@@ -15,10 +15,10 @@ import shutil
 import pytest
 import weakref
 
-from jinja2 import Environment, loaders
-from jinja2._compat import PYPY, PY2
-from jinja2.loaders import split_template_path
-from jinja2.exceptions import TemplateNotFound
+from jinja2_async import Environment, loaders
+from jinja2_async._compat import PYPY, PY2
+from jinja2_async.loaders import split_template_path
+from jinja2_async.exceptions import TemplateNotFound
 
 
 @pytest.mark.loaders

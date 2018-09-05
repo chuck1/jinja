@@ -69,7 +69,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Text Processing :: Markup :: HTML'
     ],
-    packages=['jinja2'],
+    packages=['jinja2_async'],
     python_requires=">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*",
     install_requires=['MarkupSafe>=0.23'],
     extras_require={'i18n': ['Babel>=0.8']},

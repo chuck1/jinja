@@ -11,9 +11,9 @@
 import pytest
 import os
 
-from jinja2 import loaders
-from jinja2.utils import have_async_gen
-from jinja2 import Environment
+from jinja2_async import loaders
+from jinja2_async.utils import have_async_gen
+from jinja2_async import Environment
 
 
 def pytest_ignore_collect(path, config):

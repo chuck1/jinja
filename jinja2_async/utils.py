@@ -13,7 +13,7 @@ import json
 import errno
 from collections import deque
 from threading import Lock
-from jinja2._compat import text_type, string_types, implements_iterator, \
+from ._compat import text_type, string_types, implements_iterator, \
      url_quote, abc
 
 

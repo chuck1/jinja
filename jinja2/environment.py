@@ -637,7 +637,7 @@ class Environment(object):
         template = self.from_string(nodes.Template(body, lineno=1))
         return TemplateExpression(template, undefined_to_none)
 
-    def compile_templates(self, target, extensions=None, filter_func=None,
+    async def compile_templates(self, target, extensions=None, filter_func=None,
                           zip='deflated', log_function=None,
                           ignore_errors=True, py_compile=False):
         """Finds all the templates the loader can find, compiles them
@@ -706,7 +706,7 @@ class Environment(object):
 
         try:
             for name in self.list_templates(extensions, filter_func):
-                source, filename, _ = self.loader.get_source(self, name)
+                source, filename, _ = await self.loader.get_source(self, name)
                 try:
                     code = self.compile(source, name, filename, True, True)
                 except TemplateSyntaxError as e:
@@ -794,7 +794,7 @@ class Environment(object):
         return template
 
     @internalcode
-    def _load_template(self, name, globals):
+    async def _load_template(self, name, globals):
         if self.loader is None:
             raise TypeError('no loader for this environment specified')
         cache_key = (weakref.ref(self.loader), name)
@@ -803,13 +803,13 @@ class Environment(object):
             if template is not None and (not self.auto_reload or
                                          template.is_up_to_date):
                 return template
-        template = self.loader.load(self, name, globals)
+        template = await self.loader.load(self, name, globals)
         if self.cache is not None:
             self.cache[cache_key] = template
         return template
 
     @internalcode
-    def get_template(self, name, parent=None, globals=None):
+    async def get_template(self, name, parent=None, globals=None):
         """Load a template from the loader.  If a loader is configured this
         method asks the loader for the template and returns a :class:`Template`.
         If the `parent` parameter is not `None`, :meth:`join_path` is called
@@ -829,7 +829,7 @@ class Environment(object):
             return name
         if parent is not None:
             name = self.join_path(name, parent)
-        return self._load_template(name, self.make_globals(globals))
+        return await self._load_template(name, self.make_globals(globals))
 
     @internalcode
     def select_template(self, names, parent=None, globals=None):

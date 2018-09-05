@@ -67,7 +67,7 @@ class BaseLoader(object):
     #: .. versionadded:: 2.4
     has_source_access = True
 
-    def get_source(self, environment, template):
+    async def get_source(self, environment, template):
         """Get the template source, filename and reload helper for a template.
         It's passed the environment and template name and has to return a
         tuple in the form ``(source, filename, uptodate)`` or raise a
@@ -97,7 +97,7 @@ class BaseLoader(object):
         raise TypeError('this loader cannot iterate over all templates')
 
     @internalcode
-    def load(self, environment, name, globals=None):
+    async def load(self, environment, name, globals=None):
         """Loads a template.  This method looks up the template in the cache
         or loads one by calling :meth:`get_source`.  Subclasses should not
         override this method as loaders working on collections of other
@@ -110,7 +110,7 @@ class BaseLoader(object):
 
         # first we try to get the source for this template together
         # with the filename and the uptodate function.
-        source, filename, uptodate = self.get_source(environment, name)
+        source, filename, uptodate = await self.get_source(environment, name)
 
         # try to load the code from the bytecode cache if there is a
         # bytecode cache configured.
@@ -164,7 +164,7 @@ class FileSystemLoader(BaseLoader):
         self.encoding = encoding
         self.followlinks = followlinks
 
-    def get_source(self, environment, template):
+    async def get_source(self, environment, template):
         pieces = split_template_path(template)
         for searchpath in self.searchpath:
             filename = path.join(searchpath, *pieces)
@@ -228,7 +228,7 @@ class PackageLoader(BaseLoader):
         self.provider = provider
         self.package_path = package_path
 
-    def get_source(self, environment, template):
+    async def get_source(self, environment, template):
         pieces = split_template_path(template)
         p = '/'.join((self.package_path,) + tuple(pieces))
         if not self.provider.has_resource(p):
@@ -279,7 +279,7 @@ class DictLoader(BaseLoader):
     def __init__(self, mapping):
         self.mapping = mapping
 
-    def get_source(self, environment, template):
+    async def get_source(self, environment, template):
         if template in self.mapping:
             source = self.mapping[template]
             return source, None, lambda: source == self.mapping.get(template)
@@ -310,7 +310,7 @@ class FunctionLoader(BaseLoader):
     def __init__(self, load_func):
         self.load_func = load_func
 
-    def get_source(self, environment, template):
+    async def get_source(self, environment, template):
         rv = self.load_func(template)
         if rv is None:
             raise TemplateNotFound(template)
@@ -346,20 +346,20 @@ class PrefixLoader(BaseLoader):
             raise TemplateNotFound(template)
         return loader, name
 
-    def get_source(self, environment, template):
+    async def get_source(self, environment, template):
         loader, name = self.get_loader(template)
         try:
-            return loader.get_source(environment, name)
+            return await loader.get_source(environment, name)
         except TemplateNotFound:
             # re-raise the exception with the correct filename here.
             # (the one that includes the prefix)
             raise TemplateNotFound(template)
 
     @internalcode
-    def load(self, environment, name, globals=None):
+    async def load(self, environment, name, globals=None):
         loader, local_name = self.get_loader(name)
         try:
-            return loader.load(environment, local_name, globals)
+            return await loader.load(environment, local_name, globals)
         except TemplateNotFound:
             # re-raise the exception with the correct filename here.
             # (the one that includes the prefix)
@@ -390,19 +390,19 @@ class ChoiceLoader(BaseLoader):
     def __init__(self, loaders):
         self.loaders = loaders
 
-    def get_source(self, environment, template):
+    async def get_source(self, environment, template):
         for loader in self.loaders:
             try:
-                return loader.get_source(environment, template)
+                return await loader.get_source(environment, template)
             except TemplateNotFound:
                 pass
         raise TemplateNotFound(template)
 
     @internalcode
-    def load(self, environment, name, globals=None):
+    async def load(self, environment, name, globals=None):
         for loader in self.loaders:
             try:
-                return loader.load(environment, name, globals)
+                return await loader.load(environment, name, globals)
             except TemplateNotFound:
                 pass
         raise TemplateNotFound(name)
@@ -463,7 +463,7 @@ class ModuleLoader(BaseLoader):
         return ModuleLoader.get_template_key(name) + '.py'
 
     @internalcode
-    def load(self, environment, name, globals=None):
+    async def load(self, environment, name, globals=None):
         key = self.get_template_key(name)
         module = '%s.%s' % (self.package_name, key)
         mod = getattr(self.module, module, None)

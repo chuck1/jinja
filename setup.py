@@ -39,7 +39,7 @@ from setuptools import setup
 
 
 setup(
-    name='Jinja2',
+    name='Jinja2-Async',
     version='2.11.dev',
     url='http://jinja.pocoo.org/',
     license='BSD',

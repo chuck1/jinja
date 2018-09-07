@@ -40,6 +40,14 @@ concat = u''.join
 
 _slash_escape = '\\/' not in json.dumps('/')
 
+async def concat_async(async_gen):
+    rv = []
+    async def collect():
+        async for event in async_gen:
+            rv.append(event)
+    await collect()
+    return concat(rv)
+
 
 def contextfunction(f):
     """This decorator can be used to mark a function or method context callable.

@@ -19,14 +19,6 @@ from jinja2.environment import TemplateModule
 from jinja2.runtime import LoopContextBase, _last_iteration
 
 
-async def concat_async(async_gen):
-    rv = []
-    async def collect():
-        async for event in async_gen:
-            rv.append(event)
-    await collect()
-    return concat(rv)
-
 
 async def generate_async(self, *args, **kwargs):
     vars = dict(*args, **kwargs)

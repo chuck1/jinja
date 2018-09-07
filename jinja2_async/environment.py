@@ -27,7 +27,7 @@ from .runtime import Undefined, new_context, Context
 from .exceptions import TemplateSyntaxError, TemplateNotFound, \
      TemplatesNotFound, TemplateRuntimeError
 from .utils import import_string, LRUCache, Markup, missing, \
-     concat, consume, internalcode, have_async_gen
+     concat, concat_async, consume, internalcode, have_async_gen
 from ._compat import imap, ifilter, string_types, iteritems, \
      text_type, reraise, implements_iterator, implements_to_string, \
      encode_filename, PY2, PYPY
@@ -282,8 +282,7 @@ class Environment(object):
                  loader=None,
                  cache_size=400,
                  auto_reload=True,
-                 bytecode_cache=None,
-                 enable_async=False):
+                 bytecode_cache=None):
         # !!Important notice!!
         #   The constructor accepts quite a few arguments that should be
         #   passed by keyword rather than position.  However it's important to
@@ -332,8 +331,8 @@ class Environment(object):
         # load extensions
         self.extensions = load_extensions(self, extensions)
 
-        self.enable_async = enable_async
-        self.is_async = self.enable_async and have_async_gen
+        self.enable_async = True
+        self.is_async = True
         if self.is_async:
             import jinja2.asyncsupport  # runs patch_all() once
 
@@ -935,15 +934,14 @@ class Template(object):
                 optimized=True,
                 undefined=Undefined,
                 finalize=None,
-                autoescape=False,
-                enable_async=False):
+                autoescape=False):
         env = get_spontaneous_environment(
             block_start_string, block_end_string, variable_start_string,
             variable_end_string, comment_start_string, comment_end_string,
             line_statement_prefix, line_comment_prefix, trim_blocks,
             lstrip_blocks, newline_sequence, keep_trailing_newline,
             frozenset(extensions), optimized, undefined, finalize, autoescape,
-            None, 0, False, None, enable_async)
+            None, 0, False, None, True)
         return env.from_string(source, template_class=cls)
 
     @classmethod
@@ -1009,7 +1007,7 @@ class Template(object):
             exc_info = sys.exc_info()
         return self.environment.handle_exception(exc_info, True)
 
-    def render_async(self, *args, **kwargs):
+    async def render_async(self, *args, **kwargs):
         """This works similar to :meth:`render` but returns a coroutine
         that when awaited returns the entire rendered template string.  This
         requires the async feature to be enabled.
@@ -1018,9 +1016,20 @@ class Template(object):
 
             await template.render_async(knights='that say nih; asynchronously')
         """
-        # see asyncsupport for the actual implementation
-        raise NotImplementedError('This feature is not available for this '
-                                  'version of Python')
+
+        if not self.environment.is_async:
+            raise RuntimeError('The environment was not created with async mode '
+                               'enabled.')
+    
+        vars = dict(*args, **kwargs)
+        ctx = self.new_context(vars)
+    
+        try:
+            return await concat_async(self.root_render_func(ctx))
+        except Exception:
+            exc_info = sys.exc_info()
+        return self.environment.handle_exception(exc_info, True)
+    
 
     def stream(self, *args, **kwargs):
         """Works exactly like :meth:`generate` but returns a

@@ -14,9 +14,9 @@ import asyncio
 import inspect
 from functools import update_wrapper
 
-from jinja2.utils import concat, internalcode, Markup
-from jinja2.environment import TemplateModule
-from jinja2.runtime import LoopContextBase, _last_iteration
+from jinja2_async.utils import concat, internalcode, Markup, concat_async
+from jinja2_async.environment import TemplateModule
+from jinja2_async.runtime import LoopContextBase, _last_iteration
 
 
 
